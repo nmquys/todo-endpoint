@@ -44,8 +44,8 @@
   1. Clone the repository:
   
      ```bash
-     git clone [https://github.com/nmquys/todo-endpoint.git]
-     cd todo-enpoint
+     git clone https://github.com/nmquys/todo-endpoint.git
+     cd todo-endpoint
      ```
   
   2. Install dependencies:
@@ -53,15 +53,20 @@
      ```bash
      npm install
      ```
-  3. Start the MongoDB with docker
+  3. Start the MongoDB connection with docker
       ```bash
      docker compose up -d
      ```
   
-  3. Start the development server:
+  4. Start the development server:
      ```bash
      npm start
      ```
+  5. End the MongoDB connection with docker
+      ```bash
+     docker compose down
+     ```
+
   
   ## 📘 Usage
   
@@ -91,8 +96,8 @@
   
   ```json
   {
-    "name": "John Doe",
-    "email": "john@doe.com",
+    "name": "Jane Doe",
+    "email": "jane@doe.com",
     "password": "password"
   }
   ```
@@ -115,7 +120,7 @@
   
   ```json
   {
-    "email": "john@doe.com",
+    "email": "jane@doe.com",
     "password": "password"
   }
   ```
