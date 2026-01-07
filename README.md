@@ -44,7 +44,7 @@
   1. Clone the repository:
   
      ```bash
-     git clone https://github.com/nmquys/todo-endpoint.git
+     git clone [https://github.com/nmquys/todo-endpoint.git]
      cd todo-enpoint
      ```
   
