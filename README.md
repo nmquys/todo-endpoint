@@ -60,7 +60,7 @@
   
   3. Start the development server:
      ```bash
-     node index.js
+     npm start
      ```
   
   ## 📘 Usage
