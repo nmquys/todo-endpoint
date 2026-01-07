@@ -13,10 +13,6 @@ const generateToken = (userId) => {
 
 //register
 async function register(req, res) {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
   try {
     const { name, email, password } = req.body;
 
@@ -33,10 +29,10 @@ async function register(req, res) {
       });
       const user = await newUser.save();
       //tao token
-      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
-      });
-      //const token = generateToken(user._id);
+      // const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      //   expiresIn: "1h",
+      // });
+      const token = generateToken(user._id);
       //tra ve token
       res.status(201).json({ token });
     }
@@ -47,10 +43,6 @@ async function register(req, res) {
 
 //login
 async function login(req, res) {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
   try {
     const { email, password } = req.body;
 
@@ -60,10 +52,10 @@ async function login(req, res) {
       if (!passwordMatch) {
         return res.status(400).json({ error: "Invalid email or password" });
       }
-      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
-      });
-      //const token = generateToken(user._id);
+      // const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      //   expiresIn: "1h",
+      // });
+      const token = generateToken(user._id);
       return res.status(200).json({ token });
     } else {
       res.status(404).json({ error: "User not found" });

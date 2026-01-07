@@ -1,88 +1,118 @@
 const Todo = require("../schema/todoSchema");
 
 const getTodos = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  const { title, description } = req.query;
+
+  // Sorting criteria
+  const sortField = req.query.sortBy || "createdAt";
+  const sortOrder = req.query.order === "desc" ? -1 : 1;
+
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    let filter = { creator: req.userId };
+    if (title) {
+      filter.title = { $regex: title, $options: "i" };
+    }
+    if (description) {
+      filter.description = { $regex: description, $options: "i" };
+    }
 
-    const todos = await Todo.find({ userId: rq.userId })
-      .skip(skip)
+    const total = await Todo.countDocuments(filter);
+    const todos = await Todo.find(filter)
+      .sort({ [sortField]: sortOrder })
+      .skip((page - 1) * limit)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .select("title description createdAt");
 
-    const total = await Todo.countDocuments({ userId: req.userId });
-
-    res.json({
+    res.status(200).json({
       data: todos,
       page,
       limit,
       total,
+      sortOrder,
+      sortField,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error.message);
+    res.status(500).send({ message: "Some error occurred" });
   }
 };
 
 const createTodo = async (req, res) => {
   try {
     const { title, description } = req.body;
-
-    const todo = new Todo({
+    let newTodo = new Todo({
       title,
       description,
-      userId: req.userId,
+      creator: req.userId,
     });
-
-    await todo.save();
-
-    res.status(201).json(todo);
+    const todo = await newTodo.save();
+    res.status(200).json({
+      _id: todo._id,
+      title: todo.title,
+      description: todo.description,
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error.message);
+    res.status(500).send({ message: "Some error occurred" });
   }
 };
 
 const updateTodo = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try {
-    const { id } = req.params;
-    const { title, description, completed } = req.body;
-
-    const todo = await Todo.findOne({
-      _id: id,
-      userId: req.userId,
-    });
-
-    if (!todo) {
-      return res.status(404).json({ error: "Todo not found" });
+    const id = req.params.id;
+    const { title, description } = req.body;
+    const task = await Todo.findById(id);
+    if (task) {
+      if (task.creator == req.userId) {
+        const updatedTask = await Todo.findByIdAndUpdate(
+          id,
+          {
+            $set: {
+              title,
+              description,
+            },
+          },
+          { new: true },
+        );
+        res.status(200).json({
+          _id: updatedTask._id,
+          title: updatedTask.title,
+          description: updatedTask.description,
+        });
+      } else {
+        res.status(403).send({ message: "forbidden" });
+      }
     }
-
-    if (title) todo.title = title;
-    if (description) todo.description = description;
-    if (completed) todo.completed = completed;
-
-    await todo.save();
-
-    res.json(todo);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error.message);
+    res.status(500).send({ message: "Some error occurred" });
   }
 };
 
 const deleteTodo = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const todo = await Todo.findOneAndDelete({
-      _id: id,
-      userId: req.userId,
-    });
-
-    if (!todo) {
-      return res.status(404).json({ error: "Todo not found" });
+    const id = req.params.id;
+    const task = await Todo.findById(id);
+    if (!task) {
+      return res.status(404).send({ message: "Task not found" });
+    } else {
+      if (task.creator == req.userId) {
+        await Todo.findByIdAndDelete(id);
+        res.status(204).send({ message: "Deleted Successfully!" });
+      } else {
+        res.status(403).send({ message: "forbidden" });
+      }
     }
-    res.status(204).send();
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error.message);
+    res.status(500).send({ message: "Some error occurred" });
   }
 };
 
