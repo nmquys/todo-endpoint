@@ -1,3 +1,5 @@
+const { validationResult } = require("express-validator");
+const bcrypt = require("bcrypt");
 const User = require("../schema/userSchema");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -10,50 +12,68 @@ const generateToken = (userId) => {
 };
 
 //register
-exports.register = async (req, res) => {
+async function register(req, res) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try {
     const { name, email, password } = req.body;
 
     //kiem tra ton tai
-    const existingUser = await User.findOne({ email });
+    let existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: "Email already exists" });
+    } else {
+      const hash = await bcrypt.hash(password, 10);
+      let newUser = new User({
+        name,
+        email,
+        password: hash,
+      });
+      const user = await newUser.save();
+      //tao token
+      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+      //const token = generateToken(user._id);
+      //tra ve token
+      res.status(201).json({ token });
     }
-
-    //tao user moi
-    const user = new User({ name, email, password });
-    await user.save();
-
-    //tao token
-    const token = generateToken(user._id);
-
-    //tra ve token
-    res.status(201).json({ token });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "sai o day " + error.message });
   }
-};
+}
 
 //login
-exports.login = async (req, res) => {
+async function login(req, res) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ error: "Invalid email or password" });
+    let user = await User.findOne({ email });
+    if (user) {
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        return res.status(400).json({ error: "Invalid email or password" });
+      }
+      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+      //const token = generateToken(user._id);
+      return res.status(200).json({ token });
+    } else {
+      res.status(404).json({ error: "User not found" });
     }
-
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(400).json({ error: "Invalid email or password" });
-    }
-
-    const token = generateToken(user._id);
-
-    //tra ve token
-    res.status(200).json({ token });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+}
+
+module.exports = {
+  register,
+  login,
 };

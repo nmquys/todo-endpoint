@@ -1,6 +1,6 @@
 const Todo = require("../schema/todoSchema");
 
-exports.getTodos = async (req, res) => {
+const getTodos = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -24,7 +24,7 @@ exports.getTodos = async (req, res) => {
   }
 };
 
-exports.createTodo = async (req, res) => {
+const createTodo = async (req, res) => {
   try {
     const { title, description } = req.body;
 
@@ -42,7 +42,7 @@ exports.createTodo = async (req, res) => {
   }
 };
 
-exports.updateTodo = async (req, res) => {
+const updateTodo = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, completed } = req.body;
@@ -68,7 +68,7 @@ exports.updateTodo = async (req, res) => {
   }
 };
 
-exports.deleteTodo = async (req, res) => {
+const deleteTodo = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -84,4 +84,11 @@ exports.deleteTodo = async (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+};
+
+module.exports = {
+  getTodos,
+  createTodo,
+  updateTodo,
+  deleteTodo,
 };
